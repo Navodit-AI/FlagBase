@@ -1,48 +1,38 @@
+import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { Pool, neonConfig } from '@neondatabase/serverless'
 import ws from 'ws'
 
-const rawUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL
-const url = String(rawUrl || '').trim()
-const dummyUrl = "postgresql://dummy:dummy@localhost:5432/dummy"
-
-// Force the process env at the absolute module root
-process.env.DATABASE_URL = (url && url.length > 10) ? url : dummyUrl
-
-const { PrismaClient } = require('@prisma/client')
 neonConfig.webSocketConstructor = ws
 
-const globalForPrisma = globalThis as unknown as { prisma: any | undefined }
-
 const getDbClient = () => {
-  const activeUrl = (url && url.length > 10) ? url : dummyUrl
+  const url = (process.env.DIRECT_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '').trim()
   
-  console.log(`[DB_FINAL] Injecting URL: ${activeUrl.substring(0, 15)}...`)
+  if (!url || url.length < 10) {
+    console.error('[DB_FINAL] FATAL: No database URL found in environment!')
+    return new PrismaClient()
+  }
+
+  // Force capture the URL into the env for Prisma's internal validator
+  process.env.DATABASE_URL = url
 
   try {
-    const pool = new Pool({ connectionString: activeUrl })
+    console.log('[DB_FINAL] Attempting WebSocket Adapter Init...')
+    const pool = new Pool({ connectionString: url })
     const adapter = new PrismaNeon(pool as any)
     
-    // Pass the URL to EVERY possible constructor property. 
-    // Prisma 7 changed these specs, so we provide all variations.
-    return new PrismaClient({
-      adapter,
-      datasourceUrl: activeUrl,
-      datasources: {
-        db: { url: activeUrl }
-      }
-    } as any)
+    // In Prisma 7, the 'adapter' property is the PRIMARY way to connect.
+    // We remove all other datasource overrides to avoid the 'Unknown property' crash.
+    return new PrismaClient({ adapter })
   } catch (err: any) {
-    console.error('[DB_FINAL] Adapter crash, falling back to core:', err.message)
-    return new PrismaClient({
-      datasourceUrl: activeUrl
-    } as any)
+    console.warn('[DB_FINAL] Adapter Init failed, trying native bridge:', err.message)
+    // Fallback to the most basic native client
+    return new PrismaClient()
   }
 }
 
-export const prisma = (process.env.NODE_ENV === 'production') 
-  ? getDbClient() 
-  : (globalForPrisma.prisma ?? getDbClient())
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
+export const prisma = globalForPrisma.prisma ?? getDbClient()
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
