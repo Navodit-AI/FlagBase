@@ -1,102 +1,68 @@
-export const dynamic = 'force-dynamic'
+import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
-import { getSession, requireRole } from '@/lib/session'
-import { prisma } from '@/lib/prisma'
-
-export async function GET() {
-  const session = await getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const flags = await prisma.flag.findMany({
-    where: { 
-      orgId: session.user.orgId,
-      archived: false 
-    },
-    include: {
-      overrides: {
-        include: { env: true }
-      },
-      _count: {
-        select: { rules: true }
-      }
-    },
-    orderBy: { createdAt: 'desc' }
-  })
-
-  return NextResponse.json(flags)
-}
+import { db, flags as flagsTable, environments as environmentsTable, overrides as overridesTable } from '@/lib/db'
+import { eq } from 'drizzle-orm'
+import { nanoid } from 'nanoid'
 
 export async function POST(req: Request) {
+  const session = await auth()
+  const orgId = (session?.user as any)?.orgId
+
+  if (!orgId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { name, key, description, type, defaultValue } = await req.json()
+
+    // 1. Create Flag
+    const flagId = nanoid()
+    await db.insert(flagsTable).values({
+      id: flagId,
+      name,
+      key,
+      description,
+      type,
+      defaultValue,
+      orgId,
+    })
+
+    // 2. Setup initial overrides for all org environments
+    const orgEnvs = await db.select().from(environmentsTable).where(eq(environmentsTable.orgId, orgId))
     
-    requireRole(session, 'EDITOR')
-
-    const body = await req.json()
-    const { name, key, description, type, defaultValue } = body
-
-    if (!name || !key || !type || !defaultValue) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    // Fallback: If no envs exist, create default ones
+    let targetEnvs = orgEnvs
+    if (orgEnvs.length === 0) {
+      const prodId = nanoid()
+      const stagId = nanoid()
+      const devId = nanoid()
+      
+      await db.insert(environmentsTable).values([
+        { id: prodId, name: 'production', orgId },
+        { id: stagId, name: 'staging', orgId },
+        { id: devId, name: 'development', orgId },
+      ])
+      
+      targetEnvs = [
+        { id: prodId, name: 'production', orgId },
+        { id: stagId, name: 'staging', orgId },
+        { id: devId, name: 'development', orgId },
+      ]
     }
 
-    if (!/^[a-z0-9_-]+$/.test(key)) {
-      return NextResponse.json(
-        { error: 'Key must be lowercase letters, numbers, hyphens or underscores only' }, 
-        { status: 400 }
-      )
-    }
-
-    const existing = await prisma.flag.findUnique({
-      where: { 
-        orgId_key: { orgId: session.user.orgId, key } 
-      }
-    })
-
-    if (existing) {
-      return NextResponse.json({ error: 'Flag key already exists in this organization' }, { status: 409 })
-    }
-
-    const environments = await prisma.environment.findMany({
-      where: { orgId: session.user.orgId }
-    })
-
-    const newFlag = await prisma.$transaction(async (tx) => {
-      const flag = await tx.flag.create({
-        data: {
-          name,
-          key,
-          description,
-          type,
-          defaultValue,
-          orgId: session.user.orgId,
-          overrides: {
-            create: environments.map(env => ({
-              envId: env.id,
-              enabled: false,
-              value: defaultValue
-            }))
-          }
-        }
+    // Create disabled overrides for each environment
+    for (const env of targetEnvs) {
+      await db.insert(overridesTable).values({
+        id: nanoid(),
+        flagId,
+        envId: env.id,
+        enabled: false,
+        value: defaultValue
       })
-
-      await tx.auditLog.create({
-        data: {
-          action: 'FLAG_CREATED',
-          actorId: session.user.userId,
-          actorEmail: session.user.email,
-          flagId: flag.id
-        }
-      })
-
-      return flag
-    })
-
-    return NextResponse.json(newFlag, { status: 201 })
-  } catch (error: any) {
-    if (error.message.includes('Unauthorized')) {
-      return NextResponse.json({ error: error.message }, { status: 403 })
     }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+
+    return NextResponse.json({ success: true, id: flagId })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

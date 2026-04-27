@@ -1,58 +1,44 @@
-export const dynamic = 'force-dynamic'
+import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
-import { getSession, requireRole } from '@/lib/session'
-import { prisma } from '@/lib/prisma'
+import { db, flags as flagsTable, rules as rulesTable } from '@/lib/db'
+import { eq, and, sql } from 'drizzle-orm'
+import { nanoid } from 'nanoid'
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ key: string }> }
 ) {
+  const { key } = await params
+  const session = await auth()
+  const orgId = (session?.user as any)?.orgId
+  if (!orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
-    const { key } = await params
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    
-    requireRole(session, 'EDITOR')
+    const { conditions, percentage, value } = await req.json()
 
-    const flag = await prisma.flag.findUnique({
-      where: { orgId_key: { orgId: session.user.orgId, key } }
-    })
-
+    const flags = await db.select().from(flagsTable).where(
+      and(eq(flagsTable.orgId, orgId), eq(flagsTable.key, key))
+    ).limit(1)
+    const flag = flags[0]
     if (!flag) return NextResponse.json({ error: 'Flag not found' }, { status: 404 })
 
-    const body = await req.json()
-    const { percentage, value, conditions } = body
+    const maxPriorityRes = await db.select({ max: sql<number>`MAX(CAST(${rulesTable.priority} AS INTEGER))` })
+      .from(rulesTable)
+      .where(eq(rulesTable.flagId, flag.id))
+    
+    const nextPriority = (maxPriorityRes[0]?.max || 0) + 1
 
-    if (value === undefined || !Array.isArray(conditions) || conditions.length === 0) {
-      return NextResponse.json({ error: 'Invalid or missing rule parameters' }, { status: 400 })
-    }
-
-    // Validate conditions
-    for (const cond of conditions) {
-      if (!cond.attribute || !cond.op || cond.value === undefined) {
-        return NextResponse.json({ error: 'Each condition must have attribute, op, and value' }, { status: 400 })
-      }
-    }
-
-    const count = await prisma.targetingRule.count({
-      where: { flagId: flag.id }
+    await db.insert(rulesTable).values({
+      id: nanoid(),
+      flagId: flag.id,
+      priority: nextPriority.toString(),
+      percentage: percentage?.toString() || null,
+      value: String(value),
+      conditions: JSON.stringify(conditions),
     })
 
-    const rule = await prisma.targetingRule.create({
-      data: {
-        flagId: flag.id,
-        priority: count + 1,
-        percentage,
-        value: String(value),
-        conditions: conditions
-      }
-    })
-
-    return NextResponse.json(rule, { status: 201 })
-  } catch (error: any) {
-    if (error.message.includes('Unauthorized')) {
-      return NextResponse.json({ error: error.message }, { status: 403 })
-    }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

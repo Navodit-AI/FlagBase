@@ -1,74 +1,59 @@
-export const dynamic = 'force-dynamic'
+import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
-import { getSession, requireRole } from '@/lib/session'
-import { prisma } from '@/lib/prisma'
+import { db, flags as flagsTable, environments as environmentsTable, overrides as overridesTable } from '@/lib/db'
+import { eq, and } from 'drizzle-orm'
+import { nanoid } from 'nanoid'
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ key: string, envName: string }> }
+  { params }: { params: Promise<{ key: string; envName: string }> }
 ) {
+  const { key, envName } = await params
+  const session = await auth()
+  const orgId = (session?.user as any)?.orgId
+  if (!orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
-    const { key, envName } = await params
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    
-    requireRole(session, 'EDITOR')
+    const { enabled, value } = await req.json()
 
-    const flag = await prisma.flag.findUnique({
-      where: { orgId_key: { orgId: session.user.orgId, key } }
-    })
-
+    // 1. Find the Flag
+    const flags = await db.select().from(flagsTable).where(
+      and(eq(flagsTable.orgId, orgId), eq(flagsTable.key, key))
+    ).limit(1)
+    const flag = flags[0]
     if (!flag) return NextResponse.json({ error: 'Flag not found' }, { status: 404 })
 
-    const env = await prisma.environment.findUnique({
-      where: { 
-        orgId_name: { orgId: session.user.orgId, name: envName } 
-      }
-    })
-
+    // 2. Find the Environment
+    const envs = await db.select().from(environmentsTable).where(
+      and(eq(environmentsTable.orgId, orgId), eq(environmentsTable.name, envName))
+    ).limit(1)
+    const env = envs[0]
     if (!env) return NextResponse.json({ error: 'Environment not found' }, { status: 404 })
 
-    const body = await req.json()
-    const { enabled, value } = body
+    // 3. Upsert Override
+    const existing = await db.select().from(overridesTable).where(
+      and(eq(overridesTable.flagId, flag.id), eq(overridesTable.envId, env.id))
+    ).limit(1)
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const override = await tx.flagOverride.upsert({
-        where: { 
-          flagId_envId: { flagId: flag.id, envId: env.id } 
-        },
-        create: {
-          flagId: flag.id,
-          envId: env.id,
-          enabled: enabled ?? false,
-          value: String(value ?? flag.defaultValue)
-        },
-        update: {
-          ...(enabled !== undefined && { enabled }),
-          ...(value !== undefined && { value: String(value) })
-        }
+    if (existing[0]) {
+      await db.update(overridesTable)
+        .set({ 
+          ...(enabled !== undefined && { enabled }), 
+          ...(value !== undefined && { value: String(value) }) 
+        })
+        .where(eq(overridesTable.id, existing[0].id))
+    } else {
+      await db.insert(overridesTable).values({
+        id: nanoid(),
+        flagId: flag.id,
+        envId: env.id,
+        enabled: enabled ?? false,
+        value: value !== undefined ? String(value) : flag.defaultValue
       })
-
-      await tx.auditLog.create({
-        data: {
-          action: 'OVERRIDE_TOGGLED',
-          actorId: session.user.userId,
-          actorEmail: session.user.email,
-          flagId: flag.id,
-          diff: { 
-            environment: envName, 
-            changes: body 
-          }
-        }
-      })
-
-      return override
-    })
-
-    return NextResponse.json(updated)
-  } catch (error: any) {
-    if (error.message.includes('Unauthorized')) {
-      return NextResponse.json({ error: error.message }, { status: 403 })
     }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

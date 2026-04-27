@@ -1,42 +1,43 @@
-export const dynamic = 'force-dynamic'
+import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/session'
-import { prisma } from '@/lib/prisma'
+import { db, flags as flagsTable, auditLogs as logsTable } from '@/lib/db'
+import { eq, and, desc } from 'drizzle-orm'
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ key: string }> }
 ) {
   const { key } = await params
-  const session = await getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const flag = await prisma.flag.findUnique({
-    where: { orgId_key: { orgId: session.user.orgId, key } }
-  })
-
-  if (!flag) return NextResponse.json({ error: 'Flag not found' }, { status: 404 })
+  const session = await auth()
+  const orgId = (session?.user as any)?.orgId
+  if (!orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const page = parseInt(searchParams.get('page') || '1')
-  const limit = parseInt(searchParams.get('limit') || '20')
+  const limit = parseInt(searchParams.get('limit') || '10')
+  const offset = (page - 1) * limit
 
-  const [logs, total] = await Promise.all([
-    prisma.auditLog.findMany({
-      where: { flagId: flag.id },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit
-    }),
-    prisma.auditLog.count({
-      where: { flagId: flag.id }
+  try {
+    const flags = await db.select().from(flagsTable).where(
+      and(eq(flagsTable.orgId, orgId), eq(flagsTable.key, key))
+    ).limit(1)
+    const flag = flags[0]
+    if (!flag) return NextResponse.json({ error: 'Flag not found' }, { status: 404 })
+
+    const logs = await db.select()
+      .from(logsTable)
+      .where(and(eq(logsTable.flagId, flag.id), eq(logsTable.orgId, orgId)))
+      .orderBy(desc(logsTable.createdAt))
+      .limit(limit)
+      .offset(offset)
+
+    return NextResponse.json({
+      logs: logs.map(l => ({
+        ...l,
+        diff: l.diff ? JSON.parse(l.diff) : null
+      }))
     })
-  ])
-
-  return NextResponse.json({
-    logs,
-    total,
-    page,
-    totalPages: Math.ceil(total / limit)
-  })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 }
