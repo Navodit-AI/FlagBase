@@ -23,7 +23,7 @@ const getDbClient = () => {
 
   try {
     const pool = new Pool({ connectionString: url })
-    const adapter = new PrismaNeon(pool)
+    const adapter = new PrismaNeon(pool as any)
     return new PrismaClient({ adapter })
   } catch (err: any) {
     console.error('[DB_RECOVERY] WebSocket Pool failed:', err.message)
