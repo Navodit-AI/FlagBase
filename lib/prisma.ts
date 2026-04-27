@@ -13,12 +13,13 @@ const getBaseClient = () => {
       return new PrismaClient()
     }
 
+    // Cast as any to resolve version-mismatch type errors in Vercel build
     const pool = new Pool({ connectionString: url })
-    const adapter = new PrismaNeon(pool)
+    const adapter = new PrismaNeon(pool as any)
     return new PrismaClient({ adapter })
   }
 
-  // Locally, we use the standard Prisma behavior which picked up by env
+  // Locally, we use the standard Prisma behavior
   return new PrismaClient()
 }
 
