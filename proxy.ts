@@ -1,16 +1,7 @@
-import { auth } from '@/auth'
-import { NextResponse } from 'next/server'
+import NextAuth from 'next-auth'
+import { authConfig } from './auth.config'
 
-export const proxy = auth((req) => {
-  const isAuthed = !!req.auth
-  const isDashboard = req.nextUrl.pathname.startsWith('/dashboard')
-  
-  if (isDashboard && !isAuthed) {
-    return NextResponse.redirect(new URL('/login', req.url))
-  }
-  
-  return NextResponse.next()
-})
+export const { auth: proxy } = NextAuth(authConfig)
 
 export default proxy
 
