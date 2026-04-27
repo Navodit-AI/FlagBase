@@ -1,53 +1,50 @@
 import { NextResponse } from 'next/server'
-export const dynamic = 'force-dynamic'
-import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { db, users } from '@/lib/db'
+import { eq } from 'drizzle-orm'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
-  console.log('[SIGNUP_ROUTE] Starting fresh signup attempt')
   try {
-    const body = await req.json()
-    const { name, email, password, orgName } = body
+    const { name, email, password } = await req.json()
 
-    if (!name || !email || !password || !orgName) {
-      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 })
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
 
-    const passwordHash = await bcrypt.hash(password, 12)
-    const slug = orgName.toLowerCase().trim().replace(/\s+/g, '-')
+    console.log('[SIGNUP_ROUTE] Attempting registration via Drizzle Bypass...')
 
-    await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: { name, email, passwordHash }
-      })
+    // 1. Check if user exists
+    const existingUsers = await db.select().from(users).where(eq(users.email, email)).limit(1)
+    
+    if (existingUsers.length > 0) {
+      return NextResponse.json({ error: 'User already exists' }, { status: 400 })
+    }
 
-      await tx.organization.create({
-        data: {
-          name: orgName,
-          slug,
-          environments: {
-            create: [
-              { name: 'production' },
-              { name: 'staging' },
-              { name: 'development' }
-            ]
-          },
-          members: {
-            create: {
-              userId: user.id,
-              role: 'OWNER'
-            }
-          }
-        }
-      })
-    })
+    // 2. Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    return NextResponse.json({ message: 'Account created' }, { status: 201 })
+    // 3. Create user
+    const newUser = await db.insert(users).values({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'USER'
+    }).returning()
+
+    console.log('[SIGNUP_ROUTE] User created successfully via Drizzle!')
+
+    return NextResponse.json({ 
+      user: {
+        id: newUser[0].id,
+        name: newUser[0].name,
+        email: newUser[0].email
+      }
+    }, { status: 201 })
+
   } catch (error: any) {
-    console.error('[SIGNUP_ERROR]:', error.message)
-    return NextResponse.json(
-      { message: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[SIGNUP_ERROR_DRIZZLE]:', error.message)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
