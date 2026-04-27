@@ -4,6 +4,117 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+}
+
+model Organization {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  createdAt    DateTime      @default(now())
+  members      OrgMember[]
+  flags        Flag[]
+  environments Environment[]
+  apiKeys      ApiKey[]
+}
+
+model OrgMember {
+  id     String       @id @default(cuid())
+  role   Role         @default(VIEWER)
+  userId String
+  orgId  String
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  @@unique([userId, orgId])
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  memberships  OrgMember[]
+}
+
+model Environment {
+  id        String         @id @default(cuid())
+  name      String
+  orgId     String
+  org       Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  overrides FlagOverride[]
+  @@unique([orgId, name])
+}
+
+model Flag {
+  id           String          @id @default(cuid())
+  key          String
+  description  String?
+  type         FlagType        @default(BOOLEAN)
+  defaultValue String
+  archived     Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  orgId        String
+  org          Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  rules        TargetingRule[]
+  overrides    FlagOverride[]
+  auditLogs    AuditLog[]
+  @@unique([orgId, key])
+}
+
+model FlagOverride {
+  id      String      @id @default(cuid())
+  enabled Boolean     @default(false)
+  value   String?
+  flagId  String
+  envId   String
+  flag    Flag        @relation(fields: [flagId], references: [id], onDelete: Cascade)
+  env     Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
+  @@unique([flagId, envId])
+}
+
+model TargetingRule {
+  id         String @id @default(cuid())
+  priority   Int
+  percentage Int?
+  value      String
+  conditions Json
+  flagId     String
+  flag       Flag   @relation(fields: [flagId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  diff       Json?
+  actorId    String
+  actorEmail String
+  flagId     String?
+  flag       Flag?    @relation(fields: [flagId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+}
+
+model ApiKey {
+  id        String       @id @default(cuid())
+  keyHash   String       @unique
+  label     String
+  envName   String
+  lastUsed  DateTime?
+  createdAt DateTime     @default(now())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum FlagType {
+  BOOLEAN
+  STRING
+  NUMBER
+  JSON
 }
