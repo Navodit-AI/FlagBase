@@ -5,14 +5,31 @@ import { neon } from '@neondatabase/serverless'
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 const getDbClient = () => {
-  // Use a valid-looking dummy URL for build-time safety if the real one is missing
-  const url = process.env.DATABASE_URL?.trim() || "https://dummy.neon.tech/main"
+  const envUrl = process.env.DATABASE_URL
   
-  // Neon HTTP adapter is stateless and build-safe
-  const sql = neon(url)
-  const adapter = new (PrismaNeonHttp as any)(sql)
+  // Debug: Log the type of the environment variable
+  console.log(`[DB_CHECK] DATABASE_URL type: ${typeof envUrl}`)
+  
+  // Force it to a string and ensure it's not the string 'undefined' or a function source
+  let url = (typeof envUrl === 'string' ? envUrl : '').trim()
+  
+  if (!url || url.length < 10) {
+    console.warn('[DB_CHECK] URL is invalid or missing, using dummy fallback')
+    url = "https://dummy.neon.tech/main"
+  } else {
+    // Mask the URL for security but confirm its start
+    console.log(`[DB_CHECK] URL starts with: ${url.substring(0, 15)}...`)
+  }
 
-  return new PrismaClient({ adapter })
+  try {
+    const sql = neon(url)
+    const adapter = new (PrismaNeonHttp as any)(sql)
+    return new PrismaClient({ adapter })
+  } catch (err: any) {
+    console.error('[DB_ERROR] Failed to init Prisma:', err.message)
+    // Absolute fallback to non-adapter client if the adapter init fails
+    return new PrismaClient()
+  }
 }
 
 export const prisma = globalForPrisma.prisma ?? getDbClient()
