@@ -1,25 +1,20 @@
-import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
 import { Plus, Flag, Search, Filter } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
+import { db, flags as flagsTable } from "@/lib/db"
+import { eq, desc } from "drizzle-orm"
 
 export default async function FlagsPage() {
   const session = await auth()
-  const orgId = session?.user?.orgId
-
-  const flags = await prisma.flag.findMany({
-    where: { orgId },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      overrides: {
-        include: {
-          env: true
-        }
-      }
-    }
-  })
+  
+  // Note: Drizzle bypass for Prisma engine crash
+  const orgId = (session?.user as any)?.orgId
+  const flags = await db.select()
+    .from(flagsTable)
+    .where(eq(flagsTable.orgId, orgId))
+    .orderBy(desc(flagsTable.createdAt))
 
   return (
     <div className="space-y-6">
