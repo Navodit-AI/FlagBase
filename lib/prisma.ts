@@ -6,12 +6,14 @@ import { Pool } from '@neondatabase/serverless'
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 const getPrismaClient = () => {
-  const connectionString = process.env.DATABASE_URL
-  console.log('DEBUG: connectionString type:', typeof connectionString)
+  const connectionString = process.env.DATABASE_URL?.trim()
+  console.log('DEBUG: connectionString prefix:', connectionString?.substring(0, 15))
   console.log('DEBUG: connectionString length:', connectionString?.length)
+  
   if (!connectionString) {
     throw new Error('DATABASE_URL is missing from environment')
   }
+  
   const pool = new Pool({ connectionString })
   const adapter = new PrismaNeon(pool as any)
   
