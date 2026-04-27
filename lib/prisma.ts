@@ -1,20 +1,17 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaNeonHttp } from '@prisma/adapter-neon'
-import { neon } from '@neondatabase/serverless'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 const getBaseClient = () => {
   const url = process.env.DATABASE_URL?.trim()
-  
-  if ((process.env.NODE_ENV === 'production' || process.env.VERCEL) && url) {
-    // Switch to Neon HTTP Driver (Bulletproof on Vercel Serverless/Edge)
-    const sql = neon(url)
-    const adapter = new PrismaNeonHttp(sql)
-    return new PrismaClient({ adapter })
+
+  if (process.env.NODE_ENV === 'production' && url) {
+    // Force the environment variable into the process just in case
+    // Vercel's bundler or the Prisma engine is looking for it.
+    process.env.DATABASE_URL = url
+    return new PrismaClient()
   }
 
-  // Local fallback
   return new PrismaClient()
 }
 
