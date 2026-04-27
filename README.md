@@ -13,15 +13,15 @@
 
 ## What is FlagBase?
 
-FlagBase is an open-source, self-hosted alternative to LaunchDarkly and Split.io. It lets engineering teams create, manage, and evaluate feature flags with zero infrastructure overhead. 
+FlagBase is an open-source, self-hostable alternative to LaunchDarkly and Split.io. It lets you create and evaluate feature flags with zero infrastructure overhead.
 
-We built FlagBase to bypass the complexity and cost of enterprise flag managers, using a modern **ultra-stable** stack:
+We built this for teams who want a straightforward way to manage their rollout strategy:
 
-- **Per-environment overrides** — separate state for Production, Staging, and Development.
-- **Audience targeting** — show features to specific users based on any custom attribute.
-- **Percentage rollouts** — gradually release to a fractional audience with deterministic bucketing.
-- **Audit logging** — full append-only history of every change, with before/after diffs.
-- **Drizzle-powered engine** — high-speed, type-safe data fetching with no Prisma engine overhead.
+- **Environments** — Separate states for Production, Staging, and Development.
+- **Targeting** — Target users based on any custom attribute.
+- **Gradual Rollouts** — Percentage-based releases with deterministic bucketing.
+- **Audit Logging** — Keep track of every change with simple state diffs.
+- **Drizzle Stack** — Lightweight data fetching using Drizzle ORM and Neon.
 
 ---
 

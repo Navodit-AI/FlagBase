@@ -95,13 +95,13 @@ export default function LandingPage() {
           </div>
           
           <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9] text-white mb-8">
-            Ship features safely.<br />
-            <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.2)]">Roll out with confidence.</span>
+            Ship code.<br />
+            <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.2)]">Control the rollout.</span>
           </h1>
           
           <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
-            FlagBase is a self-hosted feature flag manager for developer teams. 
-            Target users, run gradual rollouts, and kill switches — without a $300/month bill.
+            FlagBase is a self-hosted feature flag manager for developers. 
+            Manage targeting, run rollouts, and kill switches without the enterprise tax.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -134,10 +134,10 @@ export default function LandingPage() {
                 <span className="text-emerald-400">POST</span> /api/evaluate{'\n'}
                 <span className="text-emerald-600">x-api-key:</span> fb_abc123...{'\n\n'}
                 {'{'}{'\n'}
-                <span className="text-emerald-500">  "keys":</span> [<span className="text-amber-300">"new-checkout"</span>, <span className="text-amber-300">"dark-mode"</span>],{'\n'}
+                <span className="text-emerald-500">  "keys":</span> [<span className="text-amber-300">"warp-speed-mode"</span>, <span className="text-amber-300">"stargate-api"</span>],{'\n'}
                 <span className="text-emerald-500">  "context":</span> {'{'}{'\n'}
-                <span className="text-emerald-500">    "userId":</span> <span className="text-amber-300">"user_123"</span>,{'\n'}
-                <span className="text-emerald-500">    "email":</span> <span className="text-amber-300">"alice@acme.com"</span>{'\n'}
+                <span className="text-emerald-500">    "userId":</span> <span className="text-amber-300">"pilot_42"</span>,{'\n'}
+                <span className="text-emerald-500">    "email":</span> <span className="text-amber-300">"solo@falcon.mil"</span>{'\n'}
                 {'  }'}{'\n'}
                 {'}'}
               </pre>
@@ -146,8 +146,8 @@ export default function LandingPage() {
               </div>
               <pre className="text-emerald-400 mt-2">
                 {'{'}{'\n'}
-                {'  "new-checkout": '} <span className="text-white font-bold">true</span>,{'\n'}
-                {'  "dark-mode": '} <span className="text-white/40">false</span>{'\n'}
+                {'  "warp-speed-mode": '} <span className="text-white font-bold">true</span>,{'\n'}
+                {'  "stargate-api": '} <span className="text-white/40">false</span>{'\n'}
                 {'}'}
               </pre>
             </div>

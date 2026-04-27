@@ -62,7 +62,7 @@ export default function RegisterPage() {
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
-                placeholder="John Doe"
+                placeholder="Cpt. Nemo"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
@@ -73,7 +73,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="name@company.com"
+                placeholder="nemo@nautilus.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
@@ -83,7 +83,7 @@ export default function RegisterPage() {
               <Label htmlFor="orgName">Organization Name</Label>
               <Input
                 id="orgName"
-                placeholder="Acme Corp"
+                placeholder="Mars Colonization Depot"
                 value={formData.orgName}
                 onChange={(e) => setFormData({ ...formData, orgName: e.target.value })}
                 required

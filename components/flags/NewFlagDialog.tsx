@@ -113,7 +113,7 @@ export function NewFlagDialog() {
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase text-slate-400 tracking-wider">Display Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Beta Checkout" {...field} className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none h-11" />
+                      <Input placeholder="e.g. Quantum Stabilizer" {...field} className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none h-11" />
                     </FormControl>
                     <FormMessage className="text-[10px]" />
                   </FormItem>
@@ -126,7 +126,7 @@ export function NewFlagDialog() {
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase text-slate-400 tracking-wider">Flag Key</FormLabel>
                     <FormControl>
-                      <Input placeholder="checkout-v2" {...field} className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none h-11 font-mono text-sm" />
+                      <Input placeholder="stabilize-flux-cap" {...field} className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none h-11 font-mono text-sm" />
                     </FormControl>
                     <FormMessage className="text-[10px]" />
                   </FormItem>
@@ -141,7 +141,7 @@ export function NewFlagDialog() {
                 <FormItem>
                   <FormLabel className="text-xs font-bold uppercase text-slate-400 tracking-wider">Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Explain what this flag enables..." {...field} className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none min-h-[80px]" />
+                    <Textarea placeholder="Explain what happens when this flag is enabled..." {...field} className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none min-h-[80px]" />
                   </FormControl>
                   <FormMessage className="text-[10px]" />
                 </FormItem>
