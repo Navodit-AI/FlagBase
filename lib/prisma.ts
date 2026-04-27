@@ -1,51 +1,28 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { Pool } from '@neondatabase/serverless'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
-// This function initializes the client based on the environment
-const createPrismaClient = () => {
-  const connectionString = (process.env.DIRECT_URL || process.env.DATABASE_URL)?.trim()
-  
-  if (!connectionString) {
-    // We don't throw here to prevent build-time crashes (Vercel build sometimes lacks envs)
-    console.warn('Warning: DATABASE_URL is missing')
-    return new PrismaClient()
-  }
-
-  // We use a property to check if we're in a Node.js environment vs Edge
-  const isNode = typeof process !== 'undefined' && process.versions && process.versions.node
-
+const getBaseClient = () => {
+  // On Vercel/Production, we FORCE the Neon Adapter
   if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-    // Production / Vercel
-    try {
-      // We use a "lazy-require" pattern to avoid Edge runtime pollution
-      const { Pool: NeonPool } = require('@neondatabase/serverless')
-      const { PrismaNeon } = require('@prisma/adapter-neon')
-      
-      const pool = new NeonPool({ 
-        connectionString,
-        ssl: true,
-        max: 1 
-      })
-      const adapter = new PrismaNeon(pool)
-      return new PrismaClient({ adapter })
-    } catch (e) {
-      // Fallback for environments where Neon driver fails to load
+    const url = process.env.DATABASE_URL?.trim()
+    if (!url) {
+      console.error('CRITICAL: DATABASE_URL is missing in production')
       return new PrismaClient()
     }
-  } else {
-    // Local / Development
-    const { Pool: NativePool } = require('pg')
-    const { PrismaPg } = require('@prisma/adapter-pg')
-    
-    const pool = new NativePool({ connectionString })
-    const adapter = new PrismaPg(pool)
+
+    const pool = new Pool({ connectionString: url })
+    const adapter = new PrismaNeon(pool)
     return new PrismaClient({ adapter })
   }
+
+  // Locally, we use the standard Prisma behavior which picked up by env
+  return new PrismaClient()
 }
 
-// Ensure we have a singleton in development to prevent too many connections
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+export const prisma = globalForPrisma.prisma ?? getBaseClient()
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
