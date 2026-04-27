@@ -1,33 +1,32 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaNeonHttp } from '@prisma/adapter-neon'
-import { neon } from '@neondatabase/serverless'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { Pool, neonConfig } from '@neondatabase/serverless'
+import ws from 'ws'
+
+// Required for the WebSocket driver to work in Node.js/Vercel environments
+neonConfig.webSocketConstructor = ws
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 const getDbClient = () => {
   const envUrl = process.env.DATABASE_URL
-  
-  // Debug: Log the type of the environment variable
-  console.log(`[DB_CHECK] DATABASE_URL type: ${typeof envUrl}`)
-  
-  // Force it to a string and ensure it's not the string 'undefined' or a function source
-  let url = (typeof envUrl === 'string' ? envUrl : '').trim()
+  const url = (typeof envUrl === 'string' ? envUrl : '').trim()
   
   if (!url || url.length < 10) {
-    console.warn('[DB_CHECK] URL is invalid or missing, using dummy fallback')
-    url = "https://dummy.neon.tech/main"
-  } else {
-    // Mask the URL for security but confirm its start
-    console.log(`[DB_CHECK] URL starts with: ${url.substring(0, 15)}...`)
+    console.warn('[DB_CHECK] Using dummy fallback URL')
+    return new PrismaClient()
   }
 
   try {
-    const sql = neon(url)
-    const adapter = new (PrismaNeonHttp as any)(sql)
+    console.log(`[DB_INIT] Using WebSocket Pool for ${url.substring(0, 20)}...`)
+    
+    // Create a WebSocket pool instead of the flaky HTTP neon() function
+    const pool = new Pool({ connectionString: url })
+    const adapter = new PrismaNeon(pool)
+    
     return new PrismaClient({ adapter })
   } catch (err: any) {
-    console.error('[DB_ERROR] Failed to init Prisma:', err.message)
-    // Absolute fallback to non-adapter client if the adapter init fails
+    console.error('[DB_ERROR] WebSocket Pool failed, falling back:', err.message)
     return new PrismaClient()
   }
 }
