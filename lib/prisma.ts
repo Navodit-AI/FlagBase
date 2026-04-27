@@ -13,8 +13,10 @@ const getPrismaClient = () => {
   if (!connectionString) {
     throw new Error('DATABASE_URL is missing from environment')
   }
-  
-  const pool = new Pool({ connectionString })
+
+  // Passing the URL directly to the constructor as a string is the 
+  // most robust way for the underlying pg driver.
+  const pool = new Pool({ connectionString: connectionString })
   const adapter = new PrismaNeon(pool as any)
   
   const client = new PrismaClient({ adapter })
