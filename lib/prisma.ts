@@ -7,6 +7,11 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefi
 
 const getPrismaClient = () => {
   const connectionString = process.env.DATABASE_URL
+  console.log('DEBUG: connectionString type:', typeof connectionString)
+  console.log('DEBUG: connectionString length:', connectionString?.length)
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is missing from environment')
+  }
   const pool = new Pool({ connectionString })
   const adapter = new PrismaNeon(pool as any)
   
