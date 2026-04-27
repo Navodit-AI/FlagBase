@@ -22,7 +22,7 @@ const getDbClient = () => {
     
     // Create a WebSocket pool instead of the flaky HTTP neon() function
     const pool = new Pool({ connectionString: url })
-    const adapter = new PrismaNeon(pool)
+    const adapter = new PrismaNeon(pool as any)
     
     return new PrismaClient({ adapter })
   } catch (err: any) {
