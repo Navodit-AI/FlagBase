@@ -3,30 +3,30 @@ import { PrismaNeon } from '@prisma/adapter-neon'
 import { Pool, neonConfig } from '@neondatabase/serverless'
 import ws from 'ws'
 
-// Required for the WebSocket driver to work in Node.js/Vercel environments
 neonConfig.webSocketConstructor = ws
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 const getDbClient = () => {
-  const envUrl = process.env.DATABASE_URL
-  const url = (typeof envUrl === 'string' ? envUrl : '').trim()
+  // Check every possible environment name Vercel/Neon might use
+  const rawUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL
   
-  if (!url || url.length < 10) {
-    console.warn('[DB_CHECK] Using dummy fallback URL')
+  // CRITICAL: Ensure we have a string. If Turbopack injected a function, 
+  // String() will convert it to source code, so we check for 'function' specifically.
+  const url = String(rawUrl || '').trim()
+  
+  if (!url || url.includes('function') || url.length < 10) {
+    console.error('[DB_FATAL] Invalid Connection String detected:', url.substring(0, 20))
+    // Fallback to standard client (no adapter) if URL is missing
     return new PrismaClient()
   }
 
   try {
-    console.log(`[DB_INIT] Using WebSocket Pool for ${url.substring(0, 20)}...`)
-    
-    // Create a WebSocket pool instead of the flaky HTTP neon() function
     const pool = new Pool({ connectionString: url })
-    const adapter = new PrismaNeon(pool as any)
-    
+    const adapter = new PrismaNeon(pool)
     return new PrismaClient({ adapter })
   } catch (err: any) {
-    console.error('[DB_ERROR] WebSocket Pool failed, falling back:', err.message)
+    console.error('[DB_RECOVERY] WebSocket Pool failed:', err.message)
     return new PrismaClient()
   }
 }
