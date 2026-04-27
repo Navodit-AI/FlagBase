@@ -14,7 +14,8 @@ if (!connectionString) {
 // Low-level check
 console.log('DEBUG: Final connectionString check:', connectionString.substring(0, 15))
 
-const pool = new Pool({ connectionString: connectionString })
+// Passing the URL directly as a string (not an object) 
+const pool = new Pool(connectionString as any)
 const adapter = new PrismaNeon(pool as any)
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter })
