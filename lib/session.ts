@@ -1,25 +1,27 @@
 import { auth } from '@/auth'
+import { redirect } from 'next/navigation'
 
 export async function getSession() {
   const session = await auth()
-  if (!session?.user) {
-    throw new Response('Unauthorized', { status: 401 })
+  return session
+}
+
+export async function requireAuth() {
+  const session = await getSession()
+  if (!session) {
+    redirect('/login')
   }
   return session
 }
 
-const roleOrder: Record<string, number> = {
-  VIEWER: 0,
-  EDITOR: 1,
-  ADMIN: 2,
-  OWNER: 3
+export function hasRole(session: any, role: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER') {
+  const roles = ['VIEWER', 'EDITOR', 'ADMIN', 'OWNER']
+  const userRole = session?.user?.role || 'VIEWER'
+  return roles.indexOf(userRole) >= roles.indexOf(role)
 }
 
-export function requireRole(
-  session: Awaited<ReturnType<typeof getSession>>,
-  minRole: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER'
-) {
-  if (roleOrder[session.user.role] < roleOrder[minRole]) {
-    throw new Response('Forbidden', { status: 403 })
+export function requireRole(session: any, role: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER') {
+  if (!hasRole(session, role)) {
+    throw new Error('Unauthorized: Insufficient permissions')
   }
 }

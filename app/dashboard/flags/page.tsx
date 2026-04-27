@@ -13,9 +13,9 @@ export default async function FlagsPage() {
     where: { orgId },
     orderBy: { createdAt: 'desc' },
     include: {
-      environments: {
+      overrides: {
         include: {
-          environment: true
+          env: true
         }
       }
     }
