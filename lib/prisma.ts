@@ -2,37 +2,42 @@ import { PrismaNeon } from '@prisma/adapter-neon'
 import { Pool, neonConfig } from '@neondatabase/serverless'
 import ws from 'ws'
 
-// 1. SATURATE THE ENVIRONMENT IMMEDIATELY
 const rawUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL
 const url = String(rawUrl || '').trim()
 const dummyUrl = "postgresql://dummy:dummy@localhost:5432/dummy"
+
+// Force the process env at the absolute module root
 process.env.DATABASE_URL = (url && url.length > 10) ? url : dummyUrl
 
-// 2. NOW LOAD PRISMA CLIENT DYNAMICALLY
-// This ensures that the generated Prisma code sees the saturated environment above
 const { PrismaClient } = require('@prisma/client')
-
 neonConfig.webSocketConstructor = ws
 
 const globalForPrisma = globalThis as unknown as { prisma: any | undefined }
 
 const getDbClient = () => {
-  console.log('[DB_INIT] Constructing Prisma Client...')
+  const activeUrl = (url && url.length > 10) ? url : dummyUrl
   
-  if (url && url.length > 10) {
-    try {
-      console.log('[DB_INIT] Using WebSocket Adapter with valid URL')
-      const pool = new Pool({ connectionString: url })
-      const adapter = new PrismaNeon(pool as any)
-      return new PrismaClient({ adapter })
-    } catch (err: any) {
-      console.error('[DB_INIT] Adapter failure, falling back to core:', err.message)
-      return new PrismaClient()
-    }
-  }
+  console.log(`[DB_FINAL] Injecting URL: ${activeUrl.substring(0, 15)}...`)
 
-  console.warn('[DB_INIT] No URL found, using dummy core client')
-  return new PrismaClient()
+  try {
+    const pool = new Pool({ connectionString: activeUrl })
+    const adapter = new PrismaNeon(pool as any)
+    
+    // Pass the URL to EVERY possible constructor property. 
+    // Prisma 7 changed these specs, so we provide all variations.
+    return new PrismaClient({
+      adapter,
+      datasourceUrl: activeUrl,
+      datasources: {
+        db: { url: activeUrl }
+      }
+    } as any)
+  } catch (err: any) {
+    console.error('[DB_FINAL] Adapter crash, falling back to core:', err.message)
+    return new PrismaClient({
+      datasourceUrl: activeUrl
+    } as any)
+  }
 }
 
 export const prisma = (process.env.NODE_ENV === 'production') 
