@@ -8,30 +8,29 @@ neonConfig.webSocketConstructor = ws
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 const getDbClient = () => {
-  // Check every possible environment name Vercel/Neon might use
   const rawUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL
-  
-  // CRITICAL: Ensure we have a string. If Turbopack injected a function, 
-  // String() will convert it to source code, so we check for 'function' specifically.
   const url = String(rawUrl || '').trim()
   
   if (!url || url.includes('function') || url.length < 10) {
-    console.error('[DB_FATAL] Invalid Connection String detected:', url.substring(0, 20))
-    // Fallback to standard client (no adapter) if URL is missing
+    console.warn('[DB_INIT] No valid URL found, falling back to standard client')
     return new PrismaClient()
   }
 
   try {
+    console.log('[DB_INIT] Initializing fresh WebSocket Pool...')
     const pool = new Pool({ connectionString: url })
     const adapter = new PrismaNeon(pool as any)
     return new PrismaClient({ adapter })
   } catch (err: any) {
-    console.error('[DB_RECOVERY] WebSocket Pool failed:', err.message)
+    console.error('[DB_INIT] Initialization failed:', err.message)
     return new PrismaClient()
   }
 }
 
-export const prisma = globalForPrisma.prisma ?? getDbClient()
+// FORCE re-initialization in production to bypass stale Vercel warm-function caches
+export const prisma = (process.env.NODE_ENV === 'production') 
+  ? getDbClient() 
+  : (globalForPrisma.prisma ?? getDbClient())
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
