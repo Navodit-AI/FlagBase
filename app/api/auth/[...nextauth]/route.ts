@@ -4,8 +4,6 @@ import bcrypt from "bcryptjs"
 import { db, users } from "@/lib/db"
 import { eq } from "drizzle-orm"
 
-// In Auth.js v5, we destructure the handlers directly from the NextAuth call.
-// This is the correct pattern for Next.js 15/16 and resolve the '.apply' TypeError.
 export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
   providers: [
     CredentialsProvider({
@@ -18,6 +16,7 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
         if (!credentials?.email || !credentials?.password) return null
 
         try {
+          // Selecting based on the now-correct schema (no 'role')
           const userRecords = await db.select().from(users).where(eq(users.email, credentials.email as string)).limit(1)
           const user = userRecords[0]
 
@@ -26,11 +25,13 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
           const isPasswordCorrect = await bcrypt.compare(credentials.password as string, user.password)
           if (!isPasswordCorrect) return null
 
+          console.log('[AUTH] Success for:', user.email)
           return {
             id: user.id.toString(),
             name: user.name,
             email: user.email,
-            role: user.role
+            // Hardcoding a default role since the column is missing in DB
+            role: 'USER' 
           }
         } catch (error) {
           console.error('[AUTH_V5_FAIL]:', error)

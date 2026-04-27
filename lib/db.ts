@@ -5,18 +5,18 @@ import { pgTable, text, uuid, timestamp } from 'drizzle-orm/pg-core';
 const rawUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
 const url = String(rawUrl || '').trim();
 
-// 1. Raw SQL Executor (for our greedy signup)
+// 1. Raw SQL Executor
 export const sql = neon(url);
 
-// 2. Drizzle Client (for NextAuth and structured queries)
+// 2. Drizzle Client
 export const db = drizzle(sql);
 
-// 3. User Schema (matching your discovered DB casing)
+// 3. User Schema (Stripped down to the EXACT 5 columns found in your DB)
+// Found columns: createdAt, id, email, name, passwordHash
 export const users = pgTable('User', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: text('email').notNull().unique(),
-  password: text('passwordHash').notNull(), // Matching the discovered column name
+  password: text('passwordHash').notNull(),
   name: text('name'),
-  role: text('role').default('USER'),
   createdAt: timestamp('createdAt').defaultNow(),
 });
