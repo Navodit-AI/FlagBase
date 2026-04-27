@@ -1,0 +1,74 @@
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json()
+    const { name, email, password, orgName } = body
+
+    if (!name || !email || !password || !orgName) {
+      return NextResponse.json(
+        { message: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    })
+
+    if (existingUser) {
+      return NextResponse.json(
+        { message: 'Email already exists' },
+        { status: 409 }
+      )
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12)
+    const slug = orgName.toLowerCase().trim().replace(/\s+/g, '-')
+
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name,
+          email,
+          passwordHash,
+        }
+      })
+
+      const org = await tx.organization.create({
+        data: {
+          name: orgName,
+          slug,
+          environments: {
+            create: [
+              { name: 'production' },
+              { name: 'staging' },
+              { name: 'development' }
+            ]
+          },
+          members: {
+            create: {
+              userId: user.id,
+              role: 'OWNER'
+            }
+          }
+        }
+      })
+
+      return { user, org }
+    })
+
+    return NextResponse.json(
+      { message: 'Account created' },
+      { status: 201 }
+    )
+  } catch (error) {
+    console.error('Registration error:', error)
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
