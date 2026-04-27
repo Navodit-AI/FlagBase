@@ -1,25 +1,32 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
-import { Pool } from '@neondatabase/serverless'
+import { Pool, neonConfig } from '@neondatabase/serverless'
+import ws from 'ws'
+
+// Required for Neon Pool in some Node environments
+if (typeof window === 'undefined') {
+  neonConfig.webSocketConstructor = ws
+}
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 const getBaseClient = () => {
-  // On Vercel/Production, we FORCE the Neon Adapter
-  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-    const url = process.env.DATABASE_URL?.trim()
-    if (!url) {
-      console.error('CRITICAL: DATABASE_URL is missing in production')
-      return new PrismaClient()
-    }
+  const url = process.env.DATABASE_URL
+  
+  // Debug log (masked for security)
+  if (process.env.NODE_ENV === 'production') {
+    const status = url ? `PRESENT (length: ${url.length}, prefix: ${url.substring(0, 10)}...)` : 'MISSING'
+    console.log(`[PRISMA_INIT] Database URL status: ${status}`)
+  }
 
-    // Cast as any to resolve version-mismatch type errors in Vercel build
+  if ((process.env.NODE_ENV === 'production' || process.env.VERCEL) && url) {
+    // Force the use of the serverless adapter
     const pool = new Pool({ connectionString: url })
     const adapter = new PrismaNeon(pool as any)
     return new PrismaClient({ adapter })
   }
 
-  // Locally, we use the standard Prisma behavior
+  // Fallback to standard Prisma (local or if env missing)
   return new PrismaClient()
 }
 
