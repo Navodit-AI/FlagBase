@@ -1,23 +1,18 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaNeonHttp } from '@prisma/adapter-neon'
+import { neon } from '@neondatabase/serverless'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 const getDbClient = () => {
-  const url = process.env.DATABASE_URL?.trim()
+  // Use a valid-looking dummy URL for build-time safety if the real one is missing
+  const url = process.env.DATABASE_URL?.trim() || "https://dummy.neon.tech/main"
+  
+  // Neon HTTP adapter is stateless and build-safe
+  const sql = neon(url)
+  const adapter = new (PrismaNeonHttp as any)(sql)
 
-  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-    if (!url) {
-      console.error('[FLAGBASE_DB_INIT] CRITICAL: DATABASE_URL is EMPTY in production')
-    } else {
-      console.log(`[FLAGBASE_DB_INIT] Initializing Standard Prisma Engine (URL length: ${url.length})`)
-      process.env.DATABASE_URL = url
-    }
-    // We are NOT using an adapter here. If Vercel still shows a Neon error, 
-    // it means it's running a stale build.
-    return new PrismaClient()
-  }
-
-  return new PrismaClient()
+  return new PrismaClient({ adapter })
 }
 
 export const prisma = globalForPrisma.prisma ?? getDbClient()

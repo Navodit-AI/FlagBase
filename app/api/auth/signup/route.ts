@@ -1,17 +1,7 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
-
 export const dynamic = 'force-dynamic'
-
-// Create a one-off client for this route to bypass any global cache issues
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL
-    }
-  }
-})
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 export async function POST(req: Request) {
   console.log('[SIGNUP_ROUTE] Starting fresh signup attempt')
@@ -26,12 +16,12 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 12)
     const slug = orgName.toLowerCase().trim().replace(/\s+/g, '-')
 
-    const result = await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: { name, email, passwordHash }
       })
 
-      const org = await tx.organization.create({
+      await tx.organization.create({
         data: {
           name: orgName,
           slug,
@@ -50,8 +40,6 @@ export async function POST(req: Request) {
           }
         }
       })
-
-      return { user, org }
     })
 
     return NextResponse.json({ message: 'Account created' }, { status: 201 })
