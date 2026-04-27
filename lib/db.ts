@@ -1,4 +1,4 @@
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
@@ -13,9 +13,9 @@ if (!url) {
 const sql = neon(url);
 export const db = drizzle(sql);
 
-// We use lowercase 'user' because Postgres/Prisma often defaults to it 
-// unless explicitly quoted. This matches the most common migration output.
-export const users = pgTable('user', {
+// Changing to 'User' (capital U) to match Prisma's default table naming convention.
+// This resolves the 42P01 'undefined_table' error we saw in the logs.
+export const users = pgTable('User', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: text('email').notNull().unique(),
   password: text('password').notNull(),
