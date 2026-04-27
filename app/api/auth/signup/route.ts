@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     
     // Create Organization
     await sql`
-      INSERT INTO "Organization" (id, name, slug)
+      INSERT INTO "Organization" ("id", "name", "slug")
       VALUES (${orgId}, ${`${name || 'Personal'}'s Workspace`}, ${`${email.split('@')[0]}-org-${Math.floor(Math.random()*1000)}`})
     `
 
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     // Link user to org as OWNER
     await sql`
-      INSERT INTO "OrgMember" (id, userId, orgId, role)
+      INSERT INTO "OrgMember" ("id", "userId", "orgId", "role")
       VALUES (${randomUUID()}, ${userId}, ${orgId}, 'OWNER')
     `
 
