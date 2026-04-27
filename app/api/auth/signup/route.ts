@@ -18,29 +18,35 @@ export async function POST(req: Request) {
     const emailCol = rawCols.find(c => c.toLowerCase() === 'email') || 'email'
     const passCol = rawCols.find(c => ['passwordhash', 'password', 'passwordHash'].includes(c)) || 'password'
     const idCol = rawCols.find(c => c.toLowerCase() === 'id') || 'id'
-
     const hashedPassword = await bcrypt.hash(password, 10)
-    const userId = randomUUID()
-    const orgId = randomUUID()
 
     // 2. CHECK EXISTENCE
-    const existing = await sql.query(`SELECT "${idCol}" FROM "User" WHERE "${emailCol}" = $1 LIMIT 1`, [email])
-    if (existing.length > 0) return NextResponse.json({ error: 'User already exists' }, { status: 400 })
+    const existing = await sql.query(`SELECT "${idCol}" as id FROM "User" WHERE "${emailCol}" = $1 LIMIT 1`, [email])
+    let userId = existing[0]?.id
 
-    // 3. TRANSACTION-ish: Create User, Create Organization, Create OrgMember
-    // Note: We use raw SQL for speed and reliability here
-    
-    // Create Organization
+    if (existing.length > 0) {
+      // Check if user has ANY organizations. If not, they are an "orphan" user from a failed signup.
+      const userMemberships = await sql`SELECT id FROM "OrgMember" WHERE "userId" = ${userId} LIMIT 1`
+      if (userMemberships.length > 0) {
+        return NextResponse.json({ error: 'User already exists' }, { status: 400 })
+      }
+      console.log('[SIGNUP_ROUTE] Orphan user detected. Completing onboarding.')
+    } else {
+      userId = randomUUID()
+      // Create User only if new
+      await sql.query(`
+        INSERT INTO "User" ("${idCol}", "${emailCol}", "${passCol}", "name")
+        VALUES ($1, $2, $3, $4)
+      `, [userId, email, hashedPassword, name || ''])
+    }
+
+    const orgId = randomUUID()
+
+    // 3. Create Organization and Link
     await sql`
       INSERT INTO "Organization" ("id", "name", "slug")
       VALUES (${orgId}, ${`${name || 'Personal'}'s Workspace`}, ${`${email.split('@')[0]}-org-${Math.floor(Math.random()*1000)}`})
     `
-
-    // Create User
-    await sql.query(`
-      INSERT INTO "User" ("${idCol}", "${emailCol}", "${passCol}", "name")
-      VALUES ($1, $2, $3, $4)
-    `, [userId, email, hashedPassword, name || ''])
 
     // Link user to org as OWNER
     await sql`
