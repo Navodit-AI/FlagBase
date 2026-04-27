@@ -32,9 +32,10 @@ export default async function NewFlagPage() {
         key: key.toLowerCase().trim().replace(/\s+/g, '-'),
         description,
         orgId,
-        environments: {
+        defaultValue: 'false',
+        overrides: {
           create: environments.map(env => ({
-            environmentId: env.id,
+            envId: env.id,
             enabled: false,
             value: 'false'
           }))
