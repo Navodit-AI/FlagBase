@@ -1,26 +1,29 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { Pool } from '@neondatabase/serverless'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 const getPrismaClient = () => {
-  if (process.env.NODE_ENV === 'production') {
-    return new PrismaClient()
+  const connectionString = process.env.DATABASE_URL
+  const pool = new Pool({ connectionString })
+  const adapter = new PrismaNeon(pool as any)
+  
+  const client = new PrismaClient({ adapter })
+  
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = client
   }
-  if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = new PrismaClient()
-  }
-  return globalForPrisma.prisma
+  return client
 }
 
 /**
- * Proxy-based Prisma singleton.
- * This prevents Prisma from initializing during static analysis at build time.
- * The actual database connection is only created during the first actual 
- * query at runtime.
+ * Proxy-based Prisma singleton using the Neon Driver Adapter.
+ * This is the recommended way to connect to Neon in Prisma 7.
  */
 export const prisma = new Proxy({} as PrismaClient, {
   get(target, prop) {
-    const client = getPrismaClient()
+    const client = globalForPrisma.prisma ?? getPrismaClient()
     return (client as any)[prop]
   }
 })
