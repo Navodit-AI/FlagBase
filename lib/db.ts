@@ -1,12 +1,21 @@
-import { neon } from '@neondatabase/serverless';
+import { neon, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { pgTable, text, timestamp, boolean, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
-const sql = neon(process.env.DIRECT_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '');
+// Ensure the Neon HTTP driver is configured
+const rawUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
+const url = String(rawUrl || '').trim();
+
+if (!url) {
+  console.error('[DRIZZLE_INIT] No URL found!');
+}
+
+const sql = neon(url);
 export const db = drizzle(sql);
 
-// Minimal User Schema to match your existing Prisma model
-export const users = pgTable('User', {
+// We use lowercase 'user' because Postgres/Prisma often defaults to it 
+// unless explicitly quoted. This matches the most common migration output.
+export const users = pgTable('user', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: text('email').notNull().unique(),
   password: text('password').notNull(),

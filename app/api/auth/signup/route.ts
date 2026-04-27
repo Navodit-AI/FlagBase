@@ -13,12 +13,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
 
-    console.log('[SIGNUP_ROUTE] Attempting registration via Drizzle Bypass...')
+    console.log('[SIGNUP_ROUTE] Drizzle Attempt for:', email)
 
     // 1. Check if user exists
-    const existingUsers = await db.select().from(users).where(eq(users.email, email)).limit(1)
+    let existingUsers;
+    try {
+      existingUsers = await db.select().from(users).where(eq(users.email, email)).limit(1)
+    } catch (dbError: any) {
+      console.error('[DB_QUERY_FATAL]:', JSON.stringify(dbError, null, 2))
+      // Try lowercase check just in case
+      throw dbError;
+    }
     
-    if (existingUsers.length > 0) {
+    if (existingUsers && existingUsers.length > 0) {
       return NextResponse.json({ error: 'User already exists' }, { status: 400 })
     }
 
@@ -33,7 +40,7 @@ export async function POST(req: Request) {
       role: 'USER'
     }).returning()
 
-    console.log('[SIGNUP_ROUTE] User created successfully via Drizzle!')
+    console.log('[SIGNUP_ROUTE] Success!')
 
     return NextResponse.json({ 
       user: {
@@ -44,7 +51,7 @@ export async function POST(req: Request) {
     }, { status: 201 })
 
   } catch (error: any) {
-    console.error('[SIGNUP_ERROR_DRIZZLE]:', error.message)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    console.error('[SIGNUP_CATCH]:', error.message || error)
+    return NextResponse.json({ error: 'Registration failed - check logs' }, { status: 500 })
   }
 }
