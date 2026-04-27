@@ -4,7 +4,9 @@ import bcrypt from "bcryptjs"
 import { db, users } from "@/lib/db"
 import { eq } from "drizzle-orm"
 
-const handler = NextAuth({
+// In Auth.js v5, we destructure the handlers directly from the NextAuth call.
+// This is the correct pattern for Next.js 15/16 and resolve the '.apply' TypeError.
+export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -13,39 +15,25 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Missing credentials")
-        }
-
-        console.log('[AUTH] Authorizing via Drizzle Bypass:', credentials.email)
+        if (!credentials?.email || !credentials?.password) return null
 
         try {
-          // 1. Find user via Drizzle (our working driver)
-          const userRecords = await db.select().from(users).where(eq(users.email, credentials.email)).limit(1)
+          const userRecords = await db.select().from(users).where(eq(users.email, credentials.email as string)).limit(1)
           const user = userRecords[0]
 
-          if (!user || !user.password) {
-            console.warn('[AUTH] User not found')
-            return null
-          }
+          if (!user || !user.password) return null
 
-          // 2. Check password
-          const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password)
+          const isPasswordCorrect = await bcrypt.compare(credentials.password as string, user.password)
+          if (!isPasswordCorrect) return null
 
-          if (!isPasswordCorrect) {
-            console.warn('[AUTH] Invalid password')
-            return null
-          }
-
-          console.log('[AUTH] Login Success!')
           return {
             id: user.id.toString(),
             name: user.name,
             email: user.email,
             role: user.role
           }
-        } catch (error: any) {
-          console.error('[AUTH_BYPASS_FATAL]:', error.message)
+        } catch (error) {
+          console.error('[AUTH_V5_FAIL]:', error)
           return null
         }
       }
@@ -61,8 +49,8 @@ const handler = NextAuth({
     },
     async session({ session, token }: any) {
       if (session.user) {
-        session.user.role = token.role
-        session.user.id = token.id
+        session.user.role = token.role as string
+        session.user.id = token.id as string
       }
       return session
     }
@@ -75,5 +63,3 @@ const handler = NextAuth({
   },
   secret: process.env.NEXTAUTH_SECRET,
 })
-
-export { handler as GET, handler as POST }
