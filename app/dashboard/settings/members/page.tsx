@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select"
 import { InviteMemberDialog } from "@/components/members/InviteMemberDialog"
 import { RolePoliciesDialog } from "@/components/members/RolePoliciesDialog"
+import { Mail, MoreVertical, Trash2, Shield } from "lucide-react"
 
 export default async function MembersPage() {
   const session = await auth()
