@@ -90,30 +90,30 @@ export function NewFlagDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="rounded-full px-8 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 h-12">
-          <Plus className="w-5 h-5 mr-2" />
+        <Button className="rounded-full px-8 bg-emerald-500 hover:bg-emerald-600 text-black shadow-xl shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95 h-12 font-black uppercase tracking-widest text-[10px]">
+          <Plus className="w-4 h-4 mr-2" />
           Create Flag
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-border/50 shadow-2xl p-8 bg-background/95 backdrop-blur-xl">
-        <DialogHeader className="mb-6">
-          <DialogTitle className="text-2xl font-bold tracking-tight">Create New Flag</DialogTitle>
-          <DialogDescription className="text-slate-500">
+      <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] border-white/5 shadow-2xl p-8 bg-[#111] text-white">
+        <DialogHeader className="mb-8">
+          <DialogTitle className="text-3xl font-black tracking-tighter">Create New Flag</DialogTitle>
+          <DialogDescription className="text-slate-500 font-bold">
             Define a new feature flag and its default value.
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <div className="grid grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }: { field: any }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase text-slate-400 tracking-wider">Display Name</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Display Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Quantum Stabilizer" {...field} className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none h-11" />
+                      <Input placeholder="Quantum Stabilizer" {...field} className="rounded-xl bg-white/5 border-white/5 h-12 focus:border-emerald-500/50" />
                     </FormControl>
                     <FormMessage className="text-[10px]" />
                   </FormItem>
@@ -124,9 +124,9 @@ export function NewFlagDialog() {
                 name="key"
                 render={({ field }: { field: any }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase text-slate-400 tracking-wider">Flag Key</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Flag Key</FormLabel>
                     <FormControl>
-                      <Input placeholder="stabilize-flux-cap" {...field} className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none h-11 font-mono text-sm" />
+                      <Input placeholder="stabilize-flux-cap" {...field} className="rounded-xl bg-white/5 border-white/5 h-12 font-mono text-sm focus:border-emerald-500/50" />
                     </FormControl>
                     <FormMessage className="text-[10px]" />
                   </FormItem>
@@ -139,32 +139,32 @@ export function NewFlagDialog() {
               name="description"
               render={({ field }: { field: any }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold uppercase text-slate-400 tracking-wider">Description (Optional)</FormLabel>
+                  <FormLabel className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Explain what happens when this flag is enabled..." {...field} className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none min-h-[80px]" />
+                    <Textarea placeholder="Explain what happens when this flag is enabled..." {...field} className="rounded-xl bg-white/5 border-white/5 min-h-[100px] focus:border-emerald-500/50" />
                   </FormControl>
                   <FormMessage className="text-[10px]" />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4 items-end">
+            <div className="grid grid-cols-2 gap-6 items-end">
               <FormField
                 control={form.control}
                 name="type"
                 render={({ field }: { field: any }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase text-slate-400 tracking-wider">Flag Type</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Flag Type</FormLabel>
                     <Select onValueChange={(val) => {
                       field.onChange(val)
                       form.setValue("defaultValue", val === "BOOLEAN" ? "false" : "")
                     }} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none h-11">
+                        <SelectTrigger className="rounded-xl bg-white/5 border-white/5 h-12 focus:border-emerald-500/50">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="rounded-xl">
+                      <SelectContent className="bg-[#111] border-white/10 text-white rounded-xl">
                         <SelectItem value="BOOLEAN">Boolean</SelectItem>
                         <SelectItem value="STRING">String</SelectItem>
                         <SelectItem value="NUMBER">Number</SelectItem>
@@ -180,13 +180,13 @@ export function NewFlagDialog() {
                 name="defaultValue"
                 render={({ field }: { field: any }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase text-slate-400 tracking-wider">
-                      Default Value ({flagType})
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">
+                      Default Value
                     </FormLabel>
                     <FormControl>
                       {flagType === "BOOLEAN" ? (
-                        <div className="flex items-center h-11 px-4 bg-slate-50 dark:bg-slate-900 rounded-xl justify-between">
-                          <span className="text-sm font-bold font-mono uppercase">{field.value}</span>
+                        <div className="flex items-center h-12 px-4 bg-white/5 border border-white/5 rounded-xl justify-between">
+                          <span className="text-[10px] font-black font-mono uppercase text-emerald-500">{field.value}</span>
                           <Switch 
                             checked={field.value === "true"} 
                             onCheckedChange={(checked) => field.onChange(checked.toString())} 
@@ -197,7 +197,7 @@ export function NewFlagDialog() {
                           placeholder={flagType === "NUMBER" ? "0" : flagType === "JSON" ? "{}" : "value..."} 
                           type={flagType === "NUMBER" ? "number" : "text"}
                           {...field} 
-                          className="rounded-xl bg-slate-50 dark:bg-slate-900 border-none h-11" 
+                          className="rounded-xl bg-white/5 border-white/5 h-12 focus:border-emerald-500/50" 
                         />
                       )}
                     </FormControl>
@@ -207,12 +207,13 @@ export function NewFlagDialog() {
               />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
-              {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "Deploy Key"}
+            <Button type="submit" disabled={loading} className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-black font-black text-lg shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
+              {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "Deploy Flag"}
             </Button>
           </form>
         </Form>
       </DialogContent>
+
     </Dialog>
   )
 }

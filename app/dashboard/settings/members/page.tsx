@@ -19,7 +19,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
-import { UserPlus, Shield, Mail, MoreVertical, Trash2 } from "lucide-react"
+import { InviteMemberDialog } from "@/components/members/InviteMemberDialog"
+import { RolePoliciesDialog } from "@/components/members/RolePoliciesDialog"
 
 export default async function MembersPage() {
   const session = await auth()
@@ -42,82 +43,79 @@ export default async function MembersPage() {
   const canManage = userRole === 'ADMIN' || userRole === 'OWNER'
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-5xl font-black tracking-tighter text-white">
             Workspace Members
           </h1>
-          <p className="mt-3 text-lg text-slate-500 dark:text-slate-400 max-w-2xl">
+          <p className="text-lg text-slate-500 max-w-2xl font-bold">
             Manage your team's access and define their roles within this workspace.
           </p>
         </div>
-        <Button className="rounded-full px-8 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-500/20 transition-all hover:scale-105 h-12 font-bold">
-          <UserPlus className="w-5 h-5 mr-2" />
-          Invite Teammate
-        </Button>
+        <InviteMemberDialog />
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="bg-[#111] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-            <TableRow className="border-b transition-none hover:bg-transparent">
-              <TableHead className="px-10 py-6 font-bold text-slate-400">TEAM MEMBER</TableHead>
-              <TableHead className="py-6 font-bold text-slate-400">EMAIL ADDRESS</TableHead>
-              <TableHead className="py-6 font-bold text-slate-400">ACCESS ROLE</TableHead>
-              <TableHead className="px-10 py-6 font-bold text-slate-400 text-right"></TableHead>
+          <TableHeader className="bg-white/[0.02]">
+            <TableRow className="border-b border-white/5 transition-none hover:bg-transparent">
+              <TableHead className="px-10 py-6 font-black text-slate-500 uppercase tracking-widest text-[10px]">Team Member</TableHead>
+              <TableHead className="py-6 font-black text-slate-500 uppercase tracking-widest text-[10px]">Email Address</TableHead>
+              <TableHead className="py-6 font-black text-slate-500 uppercase tracking-widest text-[10px]">Access Role</TableHead>
+              <TableHead className="px-10 py-6 font-black text-slate-500 uppercase tracking-widest text-[10px] text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {members.map((member) => (
-              <TableRow key={member.id} className="group hover:bg-slate-50/20 transition-all border-b last:border-b-0">
-                <TableCell className="px-10 py-6">
+              <TableRow key={member.id} className="group hover:bg-white/[0.01] transition-all border-b border-white/5 last:border-b-0">
+                <TableCell className="px-10 py-8">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-black border border-emerald-500/20 text-lg">
                       {member.name?.[0].toUpperCase() || member.email[0].toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900 dark:text-white">{member.name || 'Pending Invite'}</p>
-                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Joined workspace</p>
+                      <p className="font-black text-white text-lg tracking-tight">{member.name || 'Pending Invite'}</p>
+                      <p className="text-[10px] text-emerald-500/60 uppercase font-black tracking-[0.2em] mt-0.5">Joined workspace</p>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="py-6">
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <Mail size={14} className="text-slate-300" />
+                <TableCell className="py-8">
+                  <div className="flex items-center gap-2 text-sm text-slate-400 font-bold">
+                    <Mail size={14} className="text-slate-600" />
                     {member.email}
                   </div>
                 </TableCell>
-                <TableCell className="py-6">
+                <TableCell className="py-8">
                   {canManage && member.role !== 'OWNER' ? (
                     <Select defaultValue={member.role}>
-                      <SelectTrigger className="w-[140px] rounded-xl border-none bg-slate-50 dark:bg-slate-800 h-9 font-bold text-xs uppercase tracking-tight">
+                      <SelectTrigger className="w-[140px] rounded-xl border border-white/10 bg-white/5 h-10 font-black text-[10px] uppercase tracking-widest text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl">
+                      <SelectContent className="bg-[#111] border-white/10 text-white rounded-xl">
                         <SelectItem value="ADMIN">Admin</SelectItem>
                         <SelectItem value="EDITOR">Editor</SelectItem>
                         <SelectItem value="VIEWER">Viewer</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
-                    <Badge variant="outline" className={`font-bold text-[10px] tracking-[0.1em] px-3 py-1 border-none shadow-sm ${
-                      member.role === 'OWNER' ? 'bg-indigo-600 text-white' :
-                      member.role === 'ADMIN' ? 'bg-indigo-50 text-indigo-600' :
-                      'bg-slate-100 text-slate-600'
+                    <Badge variant="outline" className={`font-black text-[10px] tracking-[0.2em] px-4 py-1.5 border-none shadow-sm uppercase ${
+                      member.role === 'OWNER' ? 'bg-emerald-500 text-black' :
+                      member.role === 'ADMIN' ? 'bg-white/10 text-white' :
+                      'bg-white/5 text-slate-500'
                     }`}>
                       {member.role}
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell className="px-10 py-6 text-right">
+                <TableCell className="px-10 py-8 text-right">
                   {member.role !== 'OWNER' && (
                     <div className="flex items-center justify-end gap-2">
-                       <Button variant="ghost" size="icon" className="rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-slate-100 h-9 w-9">
+                       <Button variant="ghost" size="icon" className="rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-white/5 h-10 w-10 text-slate-400">
                         <MoreVertical size={16} />
                       </Button>
-                      <Button variant="ghost" size="icon" className="rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-500 h-9 w-9 text-slate-300">
+                      <Button variant="ghost" size="icon" className="rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500/10 hover:text-red-400 h-10 w-10 text-slate-600">
                         <Trash2 size={16} />
                       </Button>
                     </div>
@@ -130,17 +128,18 @@ export default async function MembersPage() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
-        <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-[2.5rem] p-8 flex items-center gap-6 group hover:border-indigo-200 transition-colors">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
-            <Shield size={24} />
+        <div className="flex-1 bg-[#111] border border-white/5 rounded-[2.5rem] p-10 flex items-center gap-8 group hover:border-emerald-500/20 transition-all shadow-xl">
+          <div className="w-16 h-16 rounded-[1.5rem] bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform border border-emerald-500/20">
+            <Shield size={28} />
           </div>
-          <div>
-            <h4 className="font-bold text-slate-900 dark:text-white">Role Permissions</h4>
-            <p className="text-sm text-slate-500 mt-1">Learn more about what Admins, Editors, and Viewers can manage.</p>
+          <div className="flex-1">
+            <h4 className="font-black text-xl text-white tracking-tight">Role Permissions</h4>
+            <p className="text-slate-500 mt-1 font-bold">Learn more about what Admins, Editors, and Viewers can manage.</p>
           </div>
-          <Button variant="ghost" className="ml-auto rounded-full font-bold text-indigo-600">Review Policies</Button>
+          <RolePoliciesDialog />
         </div>
       </div>
     </div>
   )
 }
+

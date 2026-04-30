@@ -238,7 +238,7 @@ export default function LandingPage() {
           </div>
           <div className="relative z-10 space-y-8">
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-none mb-4">Start shipping safer today</h2>
-            <p className="text-xl font-bold opacity-80 mb-10">Free forever. Deploy to Vercel in one click.</p>
+            <p className="text-xl font-bold opacity-80 mb-10">Free forever. High-performance feature flags.</p>
             <Link href="/register">
               <Button size="lg" className="bg-black text-white hover:bg-slate-900 font-black h-16 px-12 rounded-full text-xl transition-all hover:scale-105 shadow-2xl">
                 Get Started Free

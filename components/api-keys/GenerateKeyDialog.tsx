@@ -69,81 +69,82 @@ export function GenerateKeyDialog() {
   return (
     <Dialog open={open} onOpenChange={(val) => { if (!val) handleClose(); else setOpen(true); }}>
       <DialogTrigger asChild>
-        <Button className="rounded-full px-6 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 h-12">
-          <Plus className="w-5 h-5 mr-2" />
+        <Button className="rounded-full px-8 bg-emerald-500 hover:bg-emerald-600 text-black shadow-xl shadow-emerald-500/20 transition-all hover:scale-105 h-12 font-black uppercase tracking-widest text-[10px]">
+          <Plus className="w-4 h-4 mr-2" />
           Generate New Key
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-border/50 shadow-2xl p-8 bg-background/95 backdrop-blur-xl">
-        <DialogHeader className="mb-6">
-          <DialogTitle className="text-2xl font-bold tracking-tight">Generate API Key</DialogTitle>
-          <DialogDescription className="text-slate-500">
+      <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] border-white/5 shadow-2xl p-8 bg-[#111] text-white">
+        <DialogHeader className="mb-8">
+          <DialogTitle className="text-3xl font-black tracking-tighter">Generate API Key</DialogTitle>
+          <DialogDescription className="text-slate-500 font-bold">
             Create a secure key to access FlagBase from your application.
           </DialogDescription>
         </DialogHeader>
 
         {!generatedKey ? (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-slate-400 tracking-wider px-1">Key Label</label>
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Key Label</label>
               <Input 
                 placeholder="e.g. Next.js Main App" 
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                className="rounded-xl border-none bg-slate-50 dark:bg-slate-900 h-12"
+                className="rounded-xl border-white/5 bg-white/5 h-12 focus:border-emerald-500/50"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-slate-400 tracking-wider px-1">Environment</label>
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Environment</label>
               <Select value={env} onValueChange={setEnv}>
-                <SelectTrigger className="rounded-xl border-none bg-slate-50 dark:bg-slate-900 h-12 outline-none">
+                <SelectTrigger className="rounded-xl border-white/5 bg-white/5 h-12 outline-none focus:border-emerald-500/50">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl">
+                <SelectContent className="bg-[#111] border-white/10 text-white rounded-xl">
                   <SelectItem value="production">Production</SelectItem>
                   <SelectItem value="staging">Staging</SelectItem>
                   <SelectItem value="development">Development</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleGenerate} disabled={loading} className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all">
+            <Button onClick={handleGenerate} disabled={loading} className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-black font-black text-lg shadow-xl shadow-emerald-500/20 transition-all">
               {loading ? "Generating..." : "Generate Secret Key"}
             </Button>
           </div>
         ) : (
           <div className="space-y-8 animate-in zoom-in-95 duration-300">
-            <div className="p-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 rounded-2xl flex gap-4">
-              <AlertTriangle className="text-amber-600 w-6 h-6 flex-shrink-0" />
+            <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex gap-4">
+              <AlertTriangle className="text-amber-500 w-6 h-6 flex-shrink-0" />
               <div className="space-y-1">
-                <p className="text-sm font-bold text-amber-800 dark:text-amber-200">Save this key now!</p>
-                <p className="text-xs text-amber-700/70 dark:text-amber-400/70 leading-relaxed italic">
+                <p className="text-sm font-black text-amber-500">Save this key now!</p>
+                <p className="text-xs text-amber-200/50 leading-relaxed italic font-bold">
                   For your security, we only show this key once. If you lose it, you'll need to generate a new one.
                 </p>
               </div>
             </div>
 
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-15 group-hover:opacity-30 transition-opacity" />
-              <div className="relative bg-white dark:bg-slate-950 border-2 border-indigo-100 dark:border-indigo-900/50 rounded-2xl p-2 flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-500 flex-shrink-0">
+              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl blur opacity-15 group-hover:opacity-30 transition-opacity" />
+              <div className="relative bg-black border border-white/10 rounded-2xl p-2 flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 flex-shrink-0">
                   <Key size={20} />
                 </div>
                 <Input 
                   readOnly 
                   value={generatedKey}
-                  className="border-none bg-transparent font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm focus-visible:ring-0" 
+                  className="border-none bg-transparent font-mono font-black text-emerald-400 text-sm focus-visible:ring-0" 
                 />
-                <Button onClick={copyToClipboard} size="icon" className="rounded-xl h-10 w-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                <Button onClick={copyToClipboard} size="icon" className="rounded-xl h-10 w-10 bg-emerald-500 hover:bg-emerald-600 text-black shadow-md">
                   <Copy size={16} />
                 </Button>
               </div>
             </div>
 
-            <Button onClick={handleClose} className="w-full h-12 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-black font-bold">
+            <Button onClick={handleClose} className="w-full h-12 rounded-xl bg-white text-black font-black uppercase tracking-widest text-[10px]">
               I've saved it, close window
             </Button>
           </div>
         )}
+
       </DialogContent>
     </Dialog>
   )
