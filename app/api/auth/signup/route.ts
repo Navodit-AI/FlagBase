@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true }, { status: 201 })
 
   } catch (err: any) {
-    console.error('[SIGNUP_FAIL]:', err.message)
+    console.error('[SIGNUP_CRITICAL_FAIL]:', err.message, err.stack)
     return NextResponse.json({ error: `Registration error: ${err.message}` }, { status: 500 })
   }
 }

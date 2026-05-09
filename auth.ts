@@ -37,8 +37,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: user.name,
             orgId: orgId
           }
-        } catch (error) {
-          console.error('[AUTH_ROOT_FAIL]:', error)
+        } catch (error: any) {
+          console.error('[AUTH_ROOT_CRITICAL_FAIL]:', error.message, error.stack)
           return null
         }
       }
