@@ -5,17 +5,15 @@ export const authConfig = {
   callbacks: {
     jwt({ token, user }) {
       if (user) {
-        token.userId = user.id
+        token.id = user.id
         token.orgId = (user as any).orgId
-        token.role = (user as any).role
       }
       return token
     },
     session({ session, token }) {
       if (session.user) {
-        session.user.userId = token.userId as string
-        session.user.orgId = token.orgId as string
-        session.user.role = token.role as string
+        (session.user as any).id = token.id as string
+        (session.user as any).orgId = token.orgId as string
       }
       return session
     },

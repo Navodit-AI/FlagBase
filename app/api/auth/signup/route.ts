@@ -19,12 +19,15 @@ export async function POST(req: Request) {
     let userId = existingUser?.id
 
     if (existingUser) {
+      console.log(`[SIGNUP_ROUTE] Existing user found: ${email} (ID: ${userId})`)
       // Check for orphan user (no org memberships)
       const [membership] = await db.select().from(orgMembersTable).where(eq(orgMembersTable.userId, existingUser.id)).limit(1)
+      
       if (membership) {
+        console.log(`[SIGNUP_ROUTE] User already has membership in org: ${membership.orgId}`)
         return NextResponse.json({ error: 'User already exists' }, { status: 400 })
       }
-      console.log('[SIGNUP_ROUTE] Orphan user detected. Continuing onboarding.')
+      console.log('[SIGNUP_ROUTE] Orphan user detected (no memberships found). Continuing onboarding.')
     } else {
       userId = nanoid()
       const hashedPassword = await bcrypt.hash(password, 10)

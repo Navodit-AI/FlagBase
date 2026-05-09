@@ -35,7 +35,7 @@ export default function RegisterPage() {
         router.push('/login?message=Account created successfully. Please login.')
       } else {
         const data = await res.json()
-        setError(data.message || 'Registration failed')
+        setError(data.error || 'Registration failed')
       }
     } catch (err) {
       setError('An unexpected error occurred')
