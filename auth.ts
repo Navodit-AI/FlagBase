@@ -25,9 +25,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           
           if (!valid) return null
           
-          // Fetch the user's organization ID using the unified sql helper for identifiers
-          const memberships = await sql`SELECT "orgId" FROM "OrgMember" WHERE "userId" = ${user.id} LIMIT 1`
-          const orgId = memberships[0]?.orgId
+          // Fetch the user's organization ID using Drizzle instead of raw SQL for consistency
+          const [membership] = await db.select()
+            .from(members)
+            .where(eq(members.userId, user.id))
+            .limit(1)
+            
+          const orgId = membership?.orgId
           
           if (!orgId) return null
           

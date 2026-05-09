@@ -26,9 +26,13 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
           const isPasswordCorrect = await bcrypt.compare(credentials.password as string, user.password)
           if (!isPasswordCorrect) return null
 
-          // Fetch the user's organization ID with proper casing
-          const memberships = await sql`SELECT "orgId" FROM "OrgMember" WHERE "userId" = ${user.id} LIMIT 1`
-          const orgId = memberships[0]?.orgId
+          // Fetch the user's organization ID using Drizzle instead of raw SQL for consistency
+          const [membership] = await db.select()
+            .from(members)
+            .where(eq(members.userId, user.id))
+            .limit(1)
+            
+          const orgId = membership?.orgId
 
           if (!orgId) {
             console.error('[AUTH] No organization found for user:', user.email)
