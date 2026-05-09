@@ -20,14 +20,23 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       console.log(`[SIGNUP_ROUTE] Existing user found: ${email} (ID: ${userId})`)
-      // Check for orphan user (no org memberships)
-      const [membership] = await db.select().from(orgMembersTable).where(eq(orgMembersTable.userId, existingUser.id)).limit(1)
+      
+      // Check for membership
+      const [membership] = await db.select().from(orgMembersTable).where(eq(orgMembersTable.userId, userId!)).limit(1)
       
       if (membership) {
-        console.log(`[SIGNUP_ROUTE] User already has membership in org: ${membership.orgId}`)
+        console.log(`[SIGNUP_ROUTE] User already has valid membership in org: ${membership.orgId}`)
         return NextResponse.json({ error: 'User already exists' }, { status: 400 })
       }
-      console.log('[SIGNUP_ROUTE] Orphan user detected (no memberships found). Continuing onboarding.')
+
+      // If we reach here, it's a true orphan. We will CLEAN any partial memberships just in case
+      await db.delete(orgMembersTable).where(eq(orgMembersTable.userId, userId!))
+      
+      // Also update their password to the new one provided, just in case they forgot it
+      const hashedPassword = await bcrypt.hash(password, 10)
+      await db.update(usersTable).set({ password: hashedPassword }).where(eq(usersTable.id, userId!))
+      
+      console.log('[SIGNUP_ROUTE] Orphan user detected. Updated password and cleaned stale memberships. Recreating organization.')
     } else {
       userId = nanoid()
       const hashedPassword = await bcrypt.hash(password, 10)
