@@ -34,7 +34,7 @@ export async function GET(
     return NextResponse.json({
       logs: logs.map(l => ({
         ...l,
-        diff: l.diff ? JSON.parse(l.diff) : null
+        diff: l.diff
       }))
     })
   } catch (err: any) {

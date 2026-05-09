@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     for (const flag of requestedFlags) {
       const flagRules = allRules.filter(r => r.flagId === flag.id).map(r => ({
         ...r,
-        conditions: JSON.parse(r.conditions)
+        conditions: r.conditions
       }))
       
       const override = allOverrides.find(o => o.flagId === flag.id) || null
