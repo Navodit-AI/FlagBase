@@ -1,12 +1,16 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { pgTable, text, uuid, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, uuid, timestamp, boolean, integer, jsonb, pgEnum } from 'drizzle-orm/pg-core';
 
 const rawUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
 const url = String(rawUrl || '').trim();
 
 export const sql = neon(url);
 export const db = drizzle(sql);
+
+// Enums (Matching Prisma's generated types in Postgres)
+export const flagTypeEnum = pgEnum('FlagType', ['BOOLEAN', 'STRING', 'NUMBER', 'JSON']);
+export const roleEnum = pgEnum('Role', ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']);
 
 // 1. User Schema
 export const users = pgTable('User', {
@@ -17,13 +21,13 @@ export const users = pgTable('User', {
   createdAt: timestamp('createdAt').defaultNow(),
 });
 
-// 2. Flag Schema (Mapped to your Prisma structure)
+// 2. Flag Schema
 export const flags = pgTable('Flag', {
-  id: text('id').primaryKey(), // Prisma cuid() is text
+  id: text('id').primaryKey(),
   name: text('name').notNull(),
   key: text('key').notNull(),
   description: text('description'),
-  type: text('type').default('BOOLEAN'),
+  type: flagTypeEnum('type').default('BOOLEAN'),
   defaultValue: text('defaultValue').notNull(),
   archived: boolean('archived').default(false),
   orgId: text('orgId').notNull(),
@@ -34,10 +38,10 @@ export const flags = pgTable('Flag', {
 // 3. Targeting Rule Schema
 export const rules = pgTable('TargetingRule', {
   id: text('id').primaryKey(),
-  priority: text('priority').notNull(), // Matching Prisma Int as text for safety in raw queries if needed, but Int is better.
-  percentage: text('percentage'),
+  priority: integer('priority').notNull(),
+  percentage: integer('percentage'),
   value: text('value').notNull(),
-  conditions: text('conditions').notNull(), // Storing JSON as text string
+  conditions: jsonb('conditions').notNull(),
   flagId: text('flagId').notNull(),
 })
 
@@ -62,7 +66,7 @@ export const apiKeys = pgTable('ApiKey', {
   id: text('id').primaryKey(),
   keyHash: text('keyHash').notNull().unique(),
   label: text('label').notNull(),
-  envName: text('envName').notNull(), // Matching your choice of envName in Prisma
+  envName: text('envName').notNull(),
   lastUsed: timestamp('lastUsed'),
   createdAt: timestamp('createdAt').defaultNow(),
   orgId: text('orgId').notNull(),
@@ -79,7 +83,7 @@ export const organizations = pgTable('Organization', {
 // 8. OrgMember Schema
 export const members = pgTable('OrgMember', {
   id: text('id').primaryKey(),
-  role: text('role').notNull().default('VIEWER'),
+  role: roleEnum('role').notNull().default('VIEWER'),
   userId: text('userId').notNull(),
   orgId: text('orgId').notNull(),
 })
@@ -87,10 +91,10 @@ export const members = pgTable('OrgMember', {
 // 9. Audit Log Schema
 export const auditLogs = pgTable('AuditLog', {
   id: text('id').primaryKey(),
-  action: text('action').notNull(), // FLAG_CREATED, FLAG_UPDATED, etc.
+  action: text('action').notNull(),
   actorEmail: text('actorEmail').notNull(),
   flagId: text('flagId'),
-  diff: text('diff'), // Storing JSON diff as text
+  diff: jsonb('diff'),
   createdAt: timestamp('createdAt').defaultNow(),
   orgId: text('orgId').notNull(),
 })

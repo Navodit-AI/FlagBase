@@ -1,10 +1,12 @@
 import NextAuth from "next-auth"
+import { authConfig } from "@/auth.config"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { db, users, sql } from "@/lib/db"
 import { eq } from "drizzle-orm"
 
 export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -24,15 +26,20 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
           const isPasswordCorrect = await bcrypt.compare(credentials.password as string, user.password)
           if (!isPasswordCorrect) return null
 
-          // Fetch the user's organization ID
+          // Fetch the user's organization ID with proper casing
           const memberships = await sql`SELECT "orgId" FROM "OrgMember" WHERE "userId" = ${user.id} LIMIT 1`
           const orgId = memberships[0]?.orgId
+
+          if (!orgId) {
+            console.error('[AUTH] No organization found for user:', user.email)
+            return null // Don't allow login without an org
+          }
 
           return {
             id: user.id,
             name: user.name,
             email: user.email,
-            orgId: orgId || 'no-org'
+            orgId: orgId
           }
         } catch (error) {
           console.error('[AUTH_V5_FAIL]:', error)
@@ -40,24 +47,5 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
         }
       }
     })
-  ],
-  callbacks: {
-    async jwt({ token, user }: any) {
-      if (user) {
-        token.id = user.id
-        token.orgId = user.orgId
-      }
-      return token
-    },
-    async session({ session, token }: any) {
-      if (session.user) {
-        (session.user as any).id = token.id
-        (session.user as any).orgId = token.orgId
-      }
-      return session
-    }
-  },
-  pages: { signIn: "/login" },
-  session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET,
+  ]
 })

@@ -10,24 +10,18 @@ export default async function FlagsPage() {
   if (!session) redirect('/login')
   
   const orgId = (session?.user as any)?.orgId
+  console.log('[FLAGS_PAGE] Fetching flags for orgId:', orgId)
 
-  // Fetch flags with rule counts using Drizzle
-  // This replaces the prisma.flag.findMany with an equivalent fast query
-  const flags = await db.select({
-    id: flagsTable.id,
-    name: flagsTable.name,
-    key: flagsTable.key,
-    description: flagsTable.description,
-    type: flagsTable.type,
-    createdAt: flagsTable.createdAt,
-    updatedAt: flagsTable.updatedAt,
-    _count: {
-      rules: sql<number>`(SELECT count(*) FROM "TargetingRule" WHERE "flagId" = ${flagsTable.id})`
-    }
-  })
-  .from(flagsTable)
-  .where(eq(flagsTable.orgId, orgId))
-  .orderBy(desc(flagsTable.createdAt))
+  let flags: any[] = []
+  try {
+    flags = await db.select()
+      .from(flagsTable)
+      .where(eq(flagsTable.orgId, orgId))
+      .orderBy(desc(flagsTable.createdAt))
+    console.log(`[FLAGS_PAGE] Found ${flags.length} flags`)
+  } catch (err: any) {
+    console.error('[FLAGS_PAGE] Query failed:', err.message)
+  }
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -46,7 +40,7 @@ export default async function FlagsPage() {
       </div>
 
       <div className="space-y-6">
-        <FlagTable flags={flags} />
+        <FlagTable flags={flags} orgId={orgId} />
       </div>
     </div>
   )

@@ -22,7 +22,7 @@ export async function PATCH(
 
     for (let i = 0; i < ruleIds.length; i++) {
       await db.update(rulesTable)
-        .set({ priority: (i + 1).toString() })
+        .set({ priority: (i + 1) })
         .where(and(eq(rulesTable.id, ruleIds[i]), eq(rulesTable.flagId, flags[0].id)))
     }
 

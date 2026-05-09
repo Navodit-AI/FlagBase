@@ -16,9 +16,10 @@ import { formatDistanceToNow } from "date-fns"
 
 interface FlagTableProps {
   flags: any[]
+  orgId?: string
 }
 
-export function FlagTable({ flags }: FlagTableProps) {
+export function FlagTable({ flags, orgId }: FlagTableProps) {
   if (flags.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32 bg-[#111] rounded-[2.5rem] border border-white/5 transition-all hover:border-emerald-500/20 group shadow-2xl">
@@ -28,6 +29,7 @@ export function FlagTable({ flags }: FlagTableProps) {
         <h3 className="text-3xl font-black text-white tracking-tight">No flags yet</h3>
         <p className="text-slate-500 text-center max-w-sm mt-4 mb-10 leading-relaxed font-bold">
           Create your first feature flag to start managing your application behavior in real-time.
+          <br /><span className="text-[10px] opacity-30 mt-2 block font-mono uppercase tracking-tighter">Org ID: {orgId}</span>
         </p>
       </div>
     )
@@ -81,15 +83,15 @@ export function FlagTable({ flags }: FlagTableProps) {
               </TableCell>
               <TableCell className="py-8">
                 <div className="flex items-center justify-center gap-4">
-                  <div className="flex flex-col items-center gap-2 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-help">
-                    <StatusDot enabled={true} />
+                  <div className="flex flex-col items-center gap-2 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-help" title="Click on flag to manage environment status">
+                    <StatusDot enabled={false} />
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Prod</span>
                   </div>
-                  <div className="flex flex-col items-center gap-2 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-help">
+                  <div className="flex flex-col items-center gap-2 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-help" title="Click on flag to manage environment status">
                     <StatusDot enabled={false} />
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Stag</span>
                   </div>
-                  <div className="flex flex-col items-center gap-2 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-help">
+                  <div className="flex flex-col items-center gap-2 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-help" title="Click on flag to manage environment status">
                     <StatusDot enabled={false} />
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Dev</span>
                   </div>

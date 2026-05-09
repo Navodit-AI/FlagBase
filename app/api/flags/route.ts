@@ -14,6 +14,7 @@ export async function POST(req: Request) {
 
   try {
     const { name, key, description, type, defaultValue } = await req.json()
+    console.log(`[API_FLAGS] Creating flag '${key}' for org '${orgId}'`)
 
     // 1. Create Flag
     const flagId = nanoid()
@@ -25,6 +26,8 @@ export async function POST(req: Request) {
       type,
       defaultValue,
       orgId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     })
 
     // 2. Setup initial overrides for all org environments

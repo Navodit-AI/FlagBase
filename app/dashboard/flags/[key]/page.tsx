@@ -122,12 +122,21 @@ export default async function FlagDetailsPage({ params }: { params: Promise<{ ke
           <TargetingRules 
             flagKey={flag.key} 
             flagType={safeType}
-            initialRules={rules.map(r => ({
-              ...r,
-              priority: parseInt(r.priority),
-              percentage: r.percentage ? parseInt(r.percentage) : null,
-              conditions: JSON.parse(r.conditions)
-            }))} 
+            initialRules={rules.map(r => {
+              let parsedConditions = []
+              try {
+                parsedConditions = typeof r.conditions === 'string' ? JSON.parse(r.conditions) : r.conditions
+                if (typeof parsedConditions === 'string') parsedConditions = JSON.parse(parsedConditions)
+              } catch (e) {
+                console.error('Failed to parse conditions:', r.conditions)
+              }
+              return {
+                ...r,
+                priority: r.priority,
+                percentage: r.percentage,
+                conditions: parsedConditions
+              }
+            })} 
           />
         </TabsContent>
 

@@ -22,7 +22,7 @@ export async function POST(
     const flag = flags[0]
     if (!flag) return NextResponse.json({ error: 'Flag not found' }, { status: 404 })
 
-    const maxPriorityRes = await db.select({ max: sql<number>`MAX(CAST(${rulesTable.priority} AS INTEGER))` })
+    const maxPriorityRes = await db.select({ max: sql<number>`MAX(${rulesTable.priority})` })
       .from(rulesTable)
       .where(eq(rulesTable.flagId, flag.id))
     
@@ -31,10 +31,10 @@ export async function POST(
     await db.insert(rulesTable).values({
       id: nanoid(),
       flagId: flag.id,
-      priority: nextPriority.toString(),
-      percentage: percentage?.toString() || null,
+      priority: nextPriority,
+      percentage: percentage ? parseInt(percentage) : null,
       value: String(value),
-      conditions: JSON.stringify(conditions),
+      conditions: conditions,
     })
 
     return NextResponse.json({ success: true })
